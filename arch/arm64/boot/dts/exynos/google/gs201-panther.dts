@@ -4,8 +4,8 @@
  *
  * USB (NCM + ACM), the cluster watchdogs from gs201.dtsi, a
  * simple-framebuffer on the buffer ABL leaves DPP0 scanning out, UFS, the
- * three keys, the touchscreen with its rails on the main PMIC, the GPU and
- * the haptics. The panel driver stays disabled.
+ * three keys, the touchscreen with its rails on the main PMIC, the GPU, the
+ * haptics and the MAX77759's I2C bus. The panel driver stays disabled.
  */
 
 /dts-v1/;
@@ -170,6 +170,23 @@
 };
 
 &ufs_0_phy {
+	status = "okay";
+};
+
+/*
+ * MAX77759 (charger, Type-C port controller, fuel gauge) on USI13, as on
+ * the Pixel 7 Pro: TCPC 0x25, PMIC 0x66, fuel gauge 0x36, charger 0x69,
+ * bus pins gpp25-0/1. Its devices are not described yet: the Type-C port
+ * controller would take over VBUS and the data role from the forced-VBUS
+ * setup the USB PHY uses, and the USB link is our only way into the phone.
+ */
+&usi13 {
+	samsung,mode = <USI_MODE_I2C>;
+	status = "okay";
+};
+
+&hsi2c_13 {
+	clock-frequency = <400000>;
 	status = "okay";
 };
 
