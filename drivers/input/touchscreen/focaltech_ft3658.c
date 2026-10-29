@@ -29,6 +29,7 @@
  *	event (2 bits) | x (12) | id (4) | y (12) | pressure | area
  */
 
+#include <linux/cache.h>
 #include <linux/crc-ccitt.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
@@ -77,9 +78,10 @@ struct ft3658 {
 	struct regulator *vdd;
 	struct regulator *avdd;
 	struct touchscreen_properties prop;
-	u8 tx[FT3658_BUF_LEN];
-	u8 rx[FT3658_BUF_LEN];
 	u8 report[FT3658_REPORT_LEN];
+	/* SPI buffers, DMA-safe: each on its own DMA alignment boundary */
+	u8 tx[FT3658_BUF_LEN] __aligned(ARCH_DMA_MINALIGN);
+	u8 rx[FT3658_BUF_LEN] __aligned(ARCH_DMA_MINALIGN);
 };
 
 static int ft3658_read(struct ft3658 *ts, u8 addr, u8 *data, size_t len)
