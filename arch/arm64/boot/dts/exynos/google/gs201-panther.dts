@@ -5,7 +5,8 @@
  * USB (NCM + ACM), the cluster watchdogs from gs201.dtsi, a
  * simple-framebuffer on the buffer ABL leaves DPP0 scanning out, UFS, the
  * three keys, the touchscreen with its rails on the main PMIC, the GPU, the
- * haptics and the MAX77759's I2C bus. The panel driver stays disabled.
+ * haptics and the MAX77759's I2C bus with its fuel gauge. The panel driver
+ * stays disabled.
  */
 
 /dts-v1/;
@@ -46,6 +47,15 @@
 			stride = <(1080 * 4)>;
 			format = "a8r8g8b8";
 		};
+	};
+
+	battery: battery {
+		compatible = "simple-battery";
+		/* google,chg-battery-capacity in the live tree */
+		charge-full-design-microamp-hours = <4277000>;
+		/* google,fv-max-uv; VEmpty of the live tree's gauge models */
+		voltage-max-design-microvolt = <4450000>;
+		voltage-min-design-microvolt = <3300000>;
 	};
 
 	/* The same pins as cheetah's (Google's gs201-common.dtsi). */
@@ -176,7 +186,7 @@
 /*
  * MAX77759 (charger, Type-C port controller, fuel gauge) on USI13, as on
  * the Pixel 7 Pro: TCPC 0x25, PMIC 0x66, fuel gauge 0x36, charger 0x69,
- * bus pins gpp25-0/1. Its devices are not described yet: the Type-C port
+ * bus pins gpp25-0/1. Only the fuel gauge is described: the Type-C port
  * controller would take over VBUS and the data role from the forced-VBUS
  * setup the USB PHY uses, and the USB link is our only way into the phone.
  */
@@ -188,6 +198,21 @@
 &hsi2c_13 {
 	clock-frequency = <400000>;
 	status = "okay";
+
+	/*
+	 * No battery model yet: the gauge reports from its default one, so
+	 * the capacity and the temperature are approximate.
+	 */
+	fuel-gauge@36 {
+		compatible = "maxim,max77759-fg";
+		reg = <0x36>;
+		interrupts-extended = <&gpa9 3 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-0 = <&if_pmic_fg_int>;
+		pinctrl-names = "default";
+		/* maxim,rsense-default = <500> (10 uOhm units) in the live tree */
+		shunt-resistor-micro-ohms = <5000>;
+		monitored-battery = <&battery>;
+	};
 };
 
 /*
@@ -202,6 +227,15 @@
 		samsung,pins = "gpa8-1";
 		samsung,pin-function = <GS101_PIN_FUNC_EINT>;
 		samsung,pin-pud = <GS101_PIN_PULL_NONE>;
+		samsung,pin-drv = <GS101_PIN_DRV_2_5_MA>;
+	};
+};
+
+&pinctrl_gpio_alive {
+	if_pmic_fg_int: if-pmic-fg-int-pins {
+		samsung,pins = "gpa9-3";
+		samsung,pin-function = <GS101_PIN_FUNC_EINT>;
+		samsung,pin-pud = <GS101_PIN_PULL_UP>;
 		samsung,pin-drv = <GS101_PIN_DRV_2_5_MA>;
 	};
 };
