@@ -1237,6 +1237,16 @@ static irqreturn_t max17042_thread_handler(int id, void *dev)
 			  0xFFFF & ~(STATUS_POR_BIT | STATUS_BST_BIT));
 
 	power_supply_changed(chip->battery);
+
+	/*
+	 * The MAX77759 releases ALRT only at its next task period after
+	 * Status is cleared, so the level interrupt would fire again as soon
+	 * as the oneshot thread returns, hundreds of times per alert. Wait
+	 * one task period (in units of 1/32768 s) before returning.
+	 */
+	if (chip->chip_type == MAXIM_DEVICE_TYPE_MAX77759)
+		msleep(DIV_ROUND_UP(chip->task_period * MSEC_PER_SEC, 32768));
+
 	return IRQ_HANDLED;
 }
 
