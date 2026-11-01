@@ -5,8 +5,8 @@
  * USB (NCM + ACM), the cluster watchdogs from gs201.dtsi, a
  * simple-framebuffer on the buffer ABL leaves DPP0 scanning out, UFS, the
  * three keys, the touchscreen with its rails on the main PMIC, the GPU, the
- * haptics and the MAX77759's I2C bus with its fuel gauge. The panel driver
- * stays disabled.
+ * haptics, the MAX77759's I2C bus with its fuel gauge and the DSI command
+ * path to the panel. The display itself stays on simple-framebuffer.
  */
 
 /dts-v1/;
@@ -35,8 +35,8 @@
 		/*
 		 * ABL leaves DECON0 -> DSIM0 -> panel (sdc-s6e3fc3) running in
 		 * command mode with DPP0 scanning 0xfac00000 (RDMA_BASEADDR_Y8,
-		 * read on this phone). There is no panel driver, so no panel
-		 * phandle; the size comes from this node.
+		 * read on this phone). simplefb scans it out and takes the size
+		 * from this node; the panel under dsi0 only takes commands.
 		 */
 		framebuffer0: framebuffer@fac00000 {
 			compatible = "simple-framebuffer";
@@ -158,6 +158,34 @@
 				regulator-max-microvolt = <3000000>;
 			};
 		};
+	};
+};
+
+/*
+ * Display bring-up, gate D1 (device/panther/DISPLAY-PLAN.md): the DPU and
+ * DISP clock controllers, and DSIM0 with the panel, so the panel driver can
+ * take the bootloader's panel over and send it DCS commands. DECON0 stays
+ * disabled, and simplefb keeps scanning out.
+ */
+&cmu_disp {
+	status = "okay";
+};
+
+&cmu_dpu {
+	status = "okay";
+};
+
+&dsi0 {
+	status = "okay";
+
+	panel@0 {
+		compatible = "samsung,s6e3fc3-p10";
+		reg = <0>;
+		/* high = running; the bootloader leaves it high */
+		reset-gpios = <&gpa7 1 GPIO_ACTIVE_LOW>;
+		/* vci (S2MPG12 LDO27M) and vddi (S2MPG13 BUCKA): no driver yet */
+		width-mm = <66>;
+		height-mm = <146>;
 	};
 };
 
