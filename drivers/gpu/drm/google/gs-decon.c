@@ -280,6 +280,32 @@ static const struct drm_display_mode hk3_decon_modes[] = {
 	HK3_DECON_MODE(120),
 };
 
+/*
+ * KM4 1344x2992 at 60/120 Hz, 70x156 mm. Timings and size:
+ * Google kernel/google-modules/display/panels/caimito/panel-gs-km4.c
+ * at 88db832cc8bec5fcf17b5a9947e846e23140795b, modes 2358/2382,
+ * WIDTH_MM/HEIGHT_MM 208/209.
+ */
+#define KOMODO_DECON_MODE(hz) { \
+	.clock = (1344 + 80 + 24 + 42) * (2992 + 12 + 4 + 22) * (hz) / 1000, \
+	.hdisplay = 1344, \
+	.hsync_start = 1344 + 80, \
+	.hsync_end = 1344 + 80 + 24, \
+	.htotal = 1344 + 80 + 24 + 42, \
+	.vdisplay = 2992, \
+	.vsync_start = 2992 + 12, \
+	.vsync_end = 2992 + 12 + 4, \
+	.vtotal = 2992 + 12 + 4 + 22, \
+	.width_mm = 70, \
+	.height_mm = 156, \
+	.type = DRM_MODE_TYPE_DRIVER, \
+}
+
+static const struct drm_display_mode komodo_decon_modes[] = {
+	KOMODO_DECON_MODE(60),
+	KOMODO_DECON_MODE(120),
+};
+
 /* The modes of one panel; the first is the bootloader's. */
 struct gs_decon_mode_set {
 	const struct drm_display_mode *modes;
@@ -314,6 +340,7 @@ static const struct gs_decon_mode_set gs201_mode_sets[] = {
 };
 
 static const struct gs_decon_mode_set zumapro_mode_sets[] = {
+	{ komodo_decon_modes, ARRAY_SIZE(komodo_decon_modes) },
 	{ tegu_decon_modes, ARRAY_SIZE(tegu_decon_modes) },
 };
 
